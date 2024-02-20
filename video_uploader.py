@@ -1,30 +1,12 @@
-from watchdog.observers import Observer
-from watchdog.events import FileSystemEventHandler
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaFileUpload
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
+from watchdog.observers import Observer
+from watchdog.events import FileSystemEventHandler
 import os
 import time
-
-scopes = ['https://www.googleapis.com/auth/youtube.upload']
-
-creds = None
-if os.path.exists('token.json'):
-    creds = Credentials.from_authorized_user_file('token.json', scopes=scopes)
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file(
-            'client_secrets.json', scopes=scopes)
-        creds = flow.run_local_server(port=0)
-    with open('token.json', 'w') as token:
-        token.write(creds.to_json())
-
-youtube = build('youtube', 'v3', credentials=creds)
-
 
 def upload_video(file_path, title, description, category_id, keywords, privacy_status):
     body = {
@@ -48,6 +30,12 @@ def upload_video(file_path, title, description, category_id, keywords, privacy_s
         ).execute()
 
         print(f"Uploaded {file_path} with ID: {response['id']}")
+
+    try:
+        os.remove(file_path)
+        print(f"Successfully deleted {file_path} after upload.")
+    except Exception as e:
+        print(f"Failed to delete {file_path}. Reason: {e}")
 
 
 class Watcher:
